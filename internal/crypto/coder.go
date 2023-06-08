@@ -1,7 +1,7 @@
 package crypto
 
 import (
-	"bitexporter/internal/domain"
+	"bit-exporter/internal/domain"
 )
 
 type Coder struct {

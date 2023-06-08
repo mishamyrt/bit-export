@@ -1,7 +1,7 @@
 package api
 
 import (
-	"bitexporter/internal/domain"
+	"bit-exporter/internal/domain"
 	"encoding/json"
 	"io"
 	"io/ioutil"

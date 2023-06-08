@@ -1,6 +1,6 @@
 package export
 
-import "bitexporter/internal/domain"
+import "bit-exporter/internal/domain"
 
 type Field struct {
 	Name     string `json:"name,omitempty"`

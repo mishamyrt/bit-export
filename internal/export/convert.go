@@ -1,7 +1,7 @@
 package export
 
 import (
-	"bitexporter/internal/domain"
+	"bit-exporter/internal/domain"
 )
 
 func FromDomain(sync *domain.Sync) File {
