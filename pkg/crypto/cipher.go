@@ -60,8 +60,8 @@ func (s CipherString) String() string {
 	)
 }
 
-func (s CipherString) MarshalText() ([]byte, error) {
-	return []byte(s.String()), nil
+func (s CipherString) MarshalText() []byte {
+	return []byte(s.String())
 }
 
 func (s *CipherString) UnmarshalText(data []byte) error {
