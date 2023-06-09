@@ -8,7 +8,6 @@ import (
 	"bit-exporter/internal/export"
 	"bit-exporter/pkg/crypto"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -27,6 +26,7 @@ var clientSecret string
 var clientId string
 var password string
 var apiUrl string
+var outFile string
 
 func getEnvAssert(key string, target *string) {
 	*target = os.Getenv(key)
@@ -44,6 +44,14 @@ func init() {
 	getEnvAssert("BW_CLIENT_ID", &clientId)
 	getEnvAssert("BW_PASSWORD", &password)
 	getEnvAssert("BW_API_URL", &apiUrl)
+	rootCmd.PersistentFlags().StringVarP(
+		&outFile,
+		"out-file",
+		"o",
+		"bit-export.json",
+		"out file name (default is bit-export.json)",
+	)
+
 }
 
 func getState(apiUrl string, id string, secret string) (*domain.Sync, domain.Auth) {
@@ -81,8 +89,7 @@ func exportState(sync *domain.Sync) {
 		log.Fatalf("JSON marshall error: %v", err)
 	}
 	jsonContent := string(content)
-	fmt.Println(jsonContent)
-	err = ioutil.WriteFile("bw-export.json", []byte(jsonContent), 0644)
+	err = ioutil.WriteFile(outFile, []byte(jsonContent), 0644)
 	if err != nil {
 		log.Fatalf("File writing error: %v", err)
 	}
@@ -94,11 +101,14 @@ var rootCmd = &cobra.Command{
 	Version: Version,
 	Short:   "The app that exports records from a Bitwarden-compatible server",
 	Run: func(cmd *cobra.Command, args []string) {
+		log.Println("Obtaining data")
 		sync, auth := getState(apiUrl, clientId, clientSecret)
 		key, mac := getKeys(auth.Key, sync.Profile.Email, password, auth)
 		c := codec.New(key, mac)
+		log.Println("Decrypting data")
 		c.Decode(sync)
 		exportState(sync)
+		log.Println("File " + outFile + " is saved")
 	},
 }
 
