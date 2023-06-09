@@ -52,7 +52,10 @@ func (c *Codec) decodeFolders(folders []domain.Folder) error {
 
 func (c *Codec) decodeCiphers(ciphers []domain.Cipher) error {
 	for i := range ciphers {
-		err := c.DecodeString(&ciphers[i].Name)
+		err := c.tryDecode(
+			&ciphers[i].Name,
+			&ciphers[i].Notes,
+		)
 		if err != nil {
 			return err
 		}
