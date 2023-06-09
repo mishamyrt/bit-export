@@ -5,7 +5,7 @@ import "bit-exporter/internal/domain"
 type Field struct {
 	Name     string `json:"name,omitempty"`
 	Value    string `json:"value,omitempty"`
-	Type     int    `json:"type,omitempty"`
+	Type     int    `json:"type"`
 	LinkedId string `json:"linkedId,omitempty"`
 }
 
