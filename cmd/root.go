@@ -50,7 +50,7 @@ func init() {
 		"out-file",
 		"o",
 		"bit-export.json",
-		"out file name (default is bit-export.json)",
+		"out file name",
 	)
 	rootCmd.PersistentFlags().BoolVarP(
 		&decrypt,
