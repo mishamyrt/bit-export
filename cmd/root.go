@@ -26,7 +26,9 @@ var clientSecret string
 var clientId string
 var password string
 var apiUrl string
+
 var outFile string
+var decrypt bool
 
 func getEnvAssert(key string, target *string) {
 	*target = os.Getenv(key)
@@ -42,7 +44,6 @@ func init() {
 	}
 	getEnvAssert("BW_CLIENT_SECRET", &clientSecret)
 	getEnvAssert("BW_CLIENT_ID", &clientId)
-	getEnvAssert("BW_PASSWORD", &password)
 	getEnvAssert("BW_API_URL", &apiUrl)
 	rootCmd.PersistentFlags().StringVarP(
 		&outFile,
@@ -50,6 +51,13 @@ func init() {
 		"o",
 		"bit-export.json",
 		"out file name (default is bit-export.json)",
+	)
+	rootCmd.PersistentFlags().BoolVarP(
+		&decrypt,
+		"decrypt",
+		"d",
+		false,
+		"decrypt content (default is false)",
 	)
 
 }
@@ -82,19 +90,6 @@ func getKeys(key, email, password string, auth domain.Auth) ([]byte, []byte) {
 	return masterKey, keyMac
 }
 
-func exportState(sync *domain.Sync) {
-	file := export.FromDomain(sync)
-	content, err := json.Marshal(&file)
-	if err != nil {
-		log.Fatalf("JSON marshall error: %v", err)
-	}
-	jsonContent := string(content)
-	err = ioutil.WriteFile(outFile, []byte(jsonContent), 0644)
-	if err != nil {
-		log.Fatalf("File writing error: %v", err)
-	}
-}
-
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:     AppName,
@@ -103,11 +98,29 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Println("Obtaining data")
 		sync, auth := getState(apiUrl, clientId, clientSecret)
-		key, mac := getKeys(auth.Key, sync.Profile.Email, password, auth)
-		c := codec.New(key, mac)
-		log.Println("Decrypting data")
-		c.Decode(sync)
-		exportState(sync)
+		if decrypt {
+			getEnvAssert("BW_PASSWORD", &password)
+			log.Println("Decrypting data")
+			key, mac := getKeys(auth.Key, sync.Profile.Email, password, auth)
+			c := codec.New(key, mac)
+			c.Decode(sync)
+		}
+		file := export.FromDomain(sync)
+		if decrypt {
+			file.Encrypted = false
+		} else {
+			file.Encrypted = true
+			file.Key = &auth.Key
+		}
+		content, err := json.Marshal(&file)
+		if err != nil {
+			log.Fatalf("JSON marshall error: %v", err)
+		}
+		jsonContent := string(content)
+		err = ioutil.WriteFile(outFile, []byte(jsonContent), 0644)
+		if err != nil {
+			log.Fatalf("File writing error: %v", err)
+		}
 		log.Println("File " + outFile + " is saved")
 	},
 }

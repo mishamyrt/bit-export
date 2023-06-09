@@ -1,4 +1,4 @@
-VERSION = 0.0.1
+VERSION = 0.0.4
 ENTRYFILE = main.go
 
 BUILD_DIR = build

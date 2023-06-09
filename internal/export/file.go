@@ -6,6 +6,7 @@ type Folder struct {
 }
 
 type File struct {
+	Key       *string  `json:"encKeyValidation_DO_NOT_EDIT,omitempty"`
 	Encrypted bool     `json:"encrypted"`
 	Folders   []Folder `json:"folders,omitempty"`
 	Items     []Cipher `json:"items,omitempty"`
