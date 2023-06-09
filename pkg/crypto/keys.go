@@ -25,15 +25,19 @@ type KDFParams struct {
 	Parallelism int
 }
 
-func CalculateUserKey(password string, email string, params KDFParams) ([]byte, error) {
+func CalculateUserKey(
+	password, email string,
+	kdfType uint8,
+	kdfIter, kdfMemory, kdfParallel int,
+) ([]byte, error) {
 	salt := []byte(strings.ToLower(email))
 	passBytes := []byte(password)
-	switch params.Type {
+	switch KDF(kdfType) {
 	case KDFTypePBKDF2:
 		return pbkdf2.Key(
 			passBytes,
 			salt,
-			params.Iterations,
+			kdfIter,
 			32,
 			sha256.New,
 		), nil
@@ -42,31 +46,31 @@ func CalculateUserKey(password string, email string, params KDFParams) ([]byte, 
 		return argon2.IDKey(
 			passBytes,
 			argonSalt[:],
-			uint32(params.Iterations),
-			uint32(params.Memory*1024),
-			uint8(params.Parallelism),
+			uint32(kdfIter),
+			uint32(kdfMemory*1024),
+			uint8(kdfParallel),
 			32,
 		), nil
 	default:
-		return nil, fmt.Errorf("unsupported KDF type %d", params.Type)
+		return nil, fmt.Errorf("unsupported KDF type %d", kdfType)
 	}
 }
 
 func DecryptMasterKey(masterKeyContent []byte, userKey []byte) ([]byte, []byte, error) {
-	masterKeyCipher := FromBytes(masterKeyContent)
+	masterKeyCipher := CipherFromBytes(masterKeyContent)
 	var key []byte
 	var mac []byte
 	var err error
 	switch masterKeyCipher.Type {
 	case AesCbc256_B64:
 		fmt.Println(1)
-		key, err = decryptWith(masterKeyCipher, userKey, nil)
+		key, err = Decrypt(masterKeyCipher, userKey, nil)
 		if err != nil {
 			return key, mac, err
 		}
 	case AesCbc256_HmacSha256_B64:
-		keyBytes, macKeyBytes := stretchKey(userKey)
-		key, err = decryptWith(masterKeyCipher, keyBytes, macKeyBytes)
+		keyBytes, keyMacBytes := stretchKey(userKey)
+		key, err = Decrypt(masterKeyCipher, keyBytes, keyMacBytes)
 		if err != nil {
 			return key, mac, err
 		}
@@ -82,13 +86,13 @@ func DecryptMasterKey(masterKeyContent []byte, userKey []byte) ([]byte, []byte, 
 	return key, mac, nil
 }
 
-func stretchKey(orig []byte) (key, macKey []byte) {
+func stretchKey(orig []byte) (key, keyMac []byte) {
 	key = make([]byte, 32)
-	macKey = make([]byte, 32)
+	keyMac = make([]byte, 32)
 	var r io.Reader
 	r = hkdf.Expand(sha256.New, orig, []byte("enc"))
 	r.Read(key)
 	r = hkdf.Expand(sha256.New, orig, []byte("mac"))
-	r.Read(macKey)
-	return key, macKey
+	r.Read(keyMac)
+	return key, keyMac
 }

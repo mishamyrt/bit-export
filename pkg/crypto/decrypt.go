@@ -8,7 +8,7 @@ import (
 	"fmt"
 )
 
-func decryptWith(s CipherString, key, macKey []byte) ([]byte, error) {
+func Decrypt(s CipherString, key, keyMac []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -22,13 +22,13 @@ func decryptWith(s CipherString, key, macKey []byte) ([]byte, error) {
 	}
 
 	if s.Type == AesCbc256_HmacSha256_B64 {
-		if len(s.MAC) == 0 || len(macKey) == 0 {
+		if len(s.MAC) == 0 || len(keyMac) == 0 {
 			return nil, fmt.Errorf("decrypt: cipher string type expects a MAC")
 		}
 		var msg []byte
 		msg = append(msg, s.IV...)
 		msg = append(msg, s.CT...)
-		if !validMAC(msg, s.MAC, macKey) {
+		if !validMAC(msg, s.MAC, keyMac) {
 			return nil, fmt.Errorf("decrypt: MAC mismatch")
 		}
 	}

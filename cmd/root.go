@@ -3,9 +3,10 @@ package cmd
 
 import (
 	"bit-exporter/internal/api"
-	"bit-exporter/internal/crypto"
+	"bit-exporter/internal/codec"
 	"bit-exporter/internal/domain"
 	"bit-exporter/internal/export"
+	"bit-exporter/pkg/crypto"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -57,15 +58,20 @@ func getState(apiUrl string, id string, secret string) (*domain.Sync, domain.Aut
 	return &sync, api.Auth
 }
 
-func decryptState(sync *domain.Sync, key string, password string, params crypto.KDFParams) {
-	userKey, err := crypto.CalculateUserKey(password, sync.Profile.Email, params)
-	masterKey, macKey, err := crypto.DecryptMasterKey([]byte(key), userKey)
+func getKeys(key, email, password string, auth domain.Auth) ([]byte, []byte) {
+	userKey, err := crypto.CalculateUserKey(
+		password,
+		email,
+		auth.Kdf,
+		auth.KdfIterations,
+		auth.KdfMemory,
+		auth.KdfParallelism,
+	)
+	masterKey, keyMac, err := crypto.DecryptMasterKey([]byte(key), userKey)
 	if err != nil {
 		log.Fatalf("Master key decryption error: %v", err)
 	}
-	var coder crypto.Coder
-	coder.SetKeys(masterKey, macKey)
-	coder.DecryptSync(sync)
+	return masterKey, keyMac
 }
 
 func exportState(sync *domain.Sync) {
@@ -89,13 +95,9 @@ var rootCmd = &cobra.Command{
 	Short:   "The app that exports records from a Bitwarden-compatible server",
 	Run: func(cmd *cobra.Command, args []string) {
 		sync, auth := getState(apiUrl, clientId, clientSecret)
-		decryptState(sync, auth.Key, password, crypto.KDFParams{
-			Type:        crypto.KDF(auth.Kdf),
-			Memory:      auth.KdfMemory,
-			Iterations:  auth.KdfIterations,
-			Parallelism: auth.KdfParallelism,
-		})
-
+		key, mac := getKeys(auth.Key, sync.Profile.Email, password, auth)
+		c := codec.New(key, mac)
+		c.Decode(sync)
 		exportState(sync)
 	},
 }

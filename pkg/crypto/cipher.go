@@ -9,7 +9,7 @@ import (
 
 type CipherStringType int
 
-var b64enc = base64.StdEncoding.Strict()
+var b64 = base64.StdEncoding.Strict()
 
 // Taken from https://github.com/bitwarden/jslib/blob/f30d6f8027055507abfdefd1eeb5d9aab25cc601/src/enums/encryptionType.ts
 const (
@@ -48,15 +48,15 @@ func (s CipherString) String() string {
 	if !s.Type.HasMAC() {
 		return fmt.Sprintf("%d.%s|%s",
 			s.Type,
-			b64enc.EncodeToString(s.IV),
-			b64enc.EncodeToString(s.CT),
+			b64.EncodeToString(s.IV),
+			b64.EncodeToString(s.CT),
 		)
 	}
 	return fmt.Sprintf("%d.%s|%s|%s",
 		s.Type,
-		b64enc.EncodeToString(s.IV),
-		b64enc.EncodeToString(s.CT),
-		b64enc.EncodeToString(s.MAC),
+		b64.EncodeToString(s.IV),
+		b64.EncodeToString(s.CT),
+		b64.EncodeToString(s.MAC),
 	)
 }
 
@@ -111,8 +111,8 @@ func (s *CipherString) UnmarshalText(data []byte) error {
 }
 
 func b64decode(src []byte) ([]byte, error) {
-	dst := make([]byte, b64enc.DecodedLen(len(src)))
-	n, err := b64enc.Decode(dst, src)
+	dst := make([]byte, b64.DecodedLen(len(src)))
+	n, err := b64.Decode(dst, src)
 	if err != nil {
 		return nil, err
 	}
@@ -120,12 +120,12 @@ func b64decode(src []byte) ([]byte, error) {
 	return dst, nil
 }
 
-func FromBytes(b []byte) CipherString {
+func CipherFromBytes(b []byte) CipherString {
 	var cipher CipherString
 	cipher.UnmarshalText(b)
 	return cipher
 }
 
-func FromString(s string) CipherString {
-	return FromBytes([]byte(s))
+func CipherFromString(s string) CipherString {
+	return CipherFromBytes([]byte(s))
 }
