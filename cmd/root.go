@@ -38,7 +38,7 @@ func getEnvAssert(key string, target *string) {
 func init() {
 	err := godotenv.Load()
 	if err != nil && !os.IsNotExist(err) {
-		log.Fatal("Error loading .env file")
+		log.Fatalf("Error loading .env file: %v", err)
 	}
 	getEnvAssert("BW_CLIENT_SECRET", &clientSecret)
 	getEnvAssert("BW_CLIENT_ID", &clientId)
