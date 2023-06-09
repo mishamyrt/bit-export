@@ -2,6 +2,7 @@ package codec
 
 import (
 	"bit-exporter/internal/domain"
+	"bit-exporter/internal/export"
 	"bit-exporter/pkg/crypto"
 )
 
@@ -28,19 +29,19 @@ func (c *Codec) tryDecode(pointers ...*string) error {
 	return nil
 }
 
-func (c *Codec) Decode(sync *domain.Sync) error {
-	err := c.decodeFolders(sync.Folders)
+func (c *Codec) Decode(file *export.File) error {
+	err := c.decodeFolders(file.Folders)
 	if err != nil {
 		return err
 	}
-	err = c.decodeCiphers(sync.Ciphers)
+	err = c.decodeCiphers(file.Items)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Codec) decodeFolders(folders []domain.Folder) error {
+func (c *Codec) decodeFolders(folders []export.Folder) error {
 	for i := range folders {
 		err := c.DecodeString(&folders[i].Name)
 		if err != nil {
@@ -50,7 +51,7 @@ func (c *Codec) decodeFolders(folders []domain.Folder) error {
 	return nil
 }
 
-func (c *Codec) decodeCiphers(ciphers []domain.Cipher) error {
+func (c *Codec) decodeCiphers(ciphers []export.Cipher) error {
 	for i := range ciphers {
 		err := c.tryDecode(
 			&ciphers[i].Name,
@@ -76,7 +77,7 @@ func (c *Codec) decodeCiphers(ciphers []domain.Cipher) error {
 	return nil
 }
 
-func (c *Codec) decodeFields(fields []domain.Field) error {
+func (c *Codec) decodeFields(fields []export.Field) error {
 	for i := range fields {
 		err := c.tryDecode(&fields[i].Name, &fields[i].Value)
 		if err != nil {
@@ -86,7 +87,7 @@ func (c *Codec) decodeFields(fields []domain.Field) error {
 	return nil
 }
 
-func (c *Codec) decodeCard(note *domain.CipherCard) error {
+func (c *Codec) decodeCard(note *export.CipherCard) error {
 	return c.tryDecode(
 		&note.Brand,
 		&note.CardholderName,
@@ -97,7 +98,7 @@ func (c *Codec) decodeCard(note *domain.CipherCard) error {
 	)
 }
 
-func (c *Codec) decodeIdentity(id *domain.CipherIdentity) error {
+func (c *Codec) decodeIdentity(id *export.CipherIdentity) error {
 	return c.tryDecode(
 		&id.Address1,
 		&id.Address2,
@@ -119,7 +120,7 @@ func (c *Codec) decodeIdentity(id *domain.CipherIdentity) error {
 	)
 }
 
-func (c *Codec) decodeLogin(login *domain.CipherLogin) error {
+func (c *Codec) decodeLogin(login *export.Login) error {
 	err := c.tryDecode(
 		&login.Username,
 		&login.Password,
