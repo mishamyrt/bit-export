@@ -36,11 +36,9 @@ func Decrypt(s CipherString, key, keyMac []byte) ([]byte, error) {
 	mode := cipher.NewCBCDecrypter(block, s.IV)
 	dst := make([]byte, len(s.CT))
 	mode.CryptBlocks(dst, s.CT)
-	if len(dst) > aes.BlockSize {
-		dst, err = unpadPKCS7(dst, aes.BlockSize)
-		if err != nil {
-			return nil, err
-		}
+	dst, err = unpadPKCS7(dst, aes.BlockSize)
+	if err != nil {
+		return nil, err
 	}
 	return dst, nil
 }
