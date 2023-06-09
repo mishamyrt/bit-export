@@ -37,7 +37,7 @@ type Cipher struct {
 	Favorite       bool              `json:"Favorite"`
 	Type           CipherType        `json:"Type,omitempty"`
 	Notes          string            `json:"Notes,omitempty"`
-
+	DeletedDate    *string           `json:"DeletedDate,omitempty"`
 	// OrganizationUseTotp bool `json:"OrganizationUseTotp,omitempty"`
 
 	Reprompt RepromptType `json:"Reprompt,omitempty"`
